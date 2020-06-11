@@ -31,6 +31,11 @@ dotenv.config();
 const HOST = process.env.HOST || 'localhost';
 const PORT = parseInt((process.env.PORT || 3035) as string);
 
+if (!process.env.JWT_SECRET) {
+  console.log('[server] JWT secret was not provided, check that it was defined in environment variables');
+  process.exit();
+}
+
 const server = http.createServer(app);
 
 server.listen(PORT, HOST, () => console.log(`[server] app listening at http://${HOST}:${PORT}/`));
