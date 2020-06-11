@@ -1,4 +1,5 @@
 
+import { AuthController } from './index';
 import { Request, Response } from "express";
 import { UpdateOptions, DestroyOptions } from 'sequelize';
 import { User, UserInterface } from "../models/user.model";
@@ -6,6 +7,7 @@ import { User, UserInterface } from "../models/user.model";
 export class UsersController {
   public index(req: Request, res: Response) {
     User
+      .scope('withoutPassword')
       .findAll<User>({})
       .then((users: Array<User>) => res.json(users))
       .catch((err: Error) => res.status(500).json(err));
@@ -14,8 +16,20 @@ export class UsersController {
   public create(req: Request, res: Response) {
     const params: UserInterface = req.body;
 
-    User.create<User>(params)
-      .then((user: User) => res.status(201).json(user))
+    const hashPassword = AuthController.hashPassword(params.password);
+
+    User
+      .scope('withoutPassword')
+      .create<User>({
+        ...params,
+        password: hashPassword,
+        username: params.username.toLocaleLowerCase(),
+      })
+      .then((user: User) => {
+        (user.password as any) = undefined;
+
+        res.status(201).json(user)
+      })
       .catch((err: Error) => res.status(500).json(err));
   }
 
