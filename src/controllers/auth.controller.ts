@@ -1,12 +1,10 @@
 
-import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
-import { Request, Response, NextFunction } from "express";
 import { User } from '../models/user.model';
+import { Auth } from '../models/auth.model';
 import { CustomResponse } from '../utils/customResponse';
+import { Request, Response, NextFunction } from "express";
 
 const HEADER_TOKEN = 'x-access-token';
-const MAX_AGE_COOKIE = 604800000; // In milliseconds -> 7d
 
 export class AuthController {
   static async verifyToken(req: Request, res: Response, next: NextFunction) {
@@ -23,7 +21,7 @@ export class AuthController {
     }
 
     try {
-      const user = await AuthController.getUserByToken(token);
+      const user = await Auth.getUserByToken(token);
 
       if (!user) {
         return res.status(400).send(CustomResponse({
@@ -53,7 +51,7 @@ export class AuthController {
       }
     }));
 
-    return User.findOne({
+    return User.scope('active').findOne({
       where: { username: username.toLocaleLowerCase() }
     })
     .then(user => {
@@ -67,7 +65,7 @@ export class AuthController {
         }));
       }
 
-      if (!AuthController.comparePassword(user.password, password)) {
+      if (!Auth.comparePassword(user.password, password)) {
         return res.status(200).send(CustomResponse({
           success: false,
           error: {
@@ -77,7 +75,7 @@ export class AuthController {
         }));
       }
 
-      const token = AuthController.generateToken(user.id);
+      const token = Auth.generateToken(user.id);
 
       (user.password as any) = undefined;
 
@@ -107,7 +105,7 @@ export class AuthController {
     }
 
     try {
-      const user = await AuthController.getUserByToken(token);
+      const user = await Auth.getUserByToken(token);
 
       if (!user) {
         return res.status(401).send(CustomResponse({
@@ -168,26 +166,5 @@ export class AuthController {
     } catch(error) {
       return res.status(400).send(CustomResponse({ success: false, error }));
     }
-  }
-
-  static getUserByToken(token: string) {
-    const decoded = <any>jwt.verify(token, process.env.JWT_SECRET as string);
-    
-    return User.scope('withoutPassword').findOne({where: { id: decoded.userId }});
-  }
-
-  static hashPassword(password: string) {
-    return bcrypt.hashSync(password, bcrypt.genSaltSync(12))
-  }
-
-  static comparePassword(hashPassword: string, password: string) {
-    return bcrypt.compareSync(password, hashPassword);
-  }
-
-  static generateToken(id: number) {
-    const JWT_SECRET = process.env.JWT_SECRET as string;
-    const token = jwt.sign({ userId: id }, JWT_SECRET, { expiresIn: MAX_AGE_COOKIE / 1000 });
-
-    return token;
   }
 }

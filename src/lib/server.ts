@@ -31,6 +31,8 @@ dotenv.config();
 const HOST = process.env.HOST || 'localhost';
 const PORT = parseInt((process.env.PORT || 3035) as string);
 
+process.env.MAX_AGE_TOKEN = process.env.MAX_AGE_TOKEN || '604800000';
+
 if (!process.env.JWT_SECRET) {
   console.log('[server] JWT secret was not provided, check that it was defined in environment variables');
   process.exit();
