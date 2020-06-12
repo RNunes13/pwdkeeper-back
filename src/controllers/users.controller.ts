@@ -1,11 +1,12 @@
 
-import { AuthController } from './index';
+import jwt from 'jsonwebtoken';
+import { Auth } from "../models/auth.model";
 import { Request, Response } from "express";
 import { UpdateOptions, DestroyOptions } from 'sequelize';
 import { User, UserInterface } from "../models/user.model";
 
 export class UsersController {
-  public index(req: Request, res: Response) {
+  static index(req: Request, res: Response) {
     User
       .scope('withoutPassword')
       .findAll<User>({})
@@ -13,10 +14,10 @@ export class UsersController {
       .catch((err: Error) => res.status(500).json(err));
   }
 
-  public create(req: Request, res: Response) {
+  static create(req: Request, res: Response) {
     const params: UserInterface = req.body;
 
-    const hashPassword = AuthController.hashPassword(params.password);
+    const hashPassword = Auth.hashPassword(params.password);
 
     User
       .scope('withoutPassword')
@@ -28,12 +29,18 @@ export class UsersController {
       .then((user: User) => {
         (user.password as any) = undefined;
 
-        res.status(201).json(user)
+        const JWT_SECRET = process.env.JWT_SECRET as string;
+        const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: parseInt(process.env.MAX_AGE_TOKEN as string) / 1000 });
+
+        res.status(201).json({
+          token,
+          ...user.toJSON(),
+        });
       })
       .catch((err: Error) => res.status(500).json(err));
   }
 
-  public findById(req: Request, res: Response) {
+  static findById(req: Request, res: Response) {
     User.findByPk<User>(req.params.id)
       .then((user: User | null) => {
         if (user) res.json(user);
@@ -42,7 +49,7 @@ export class UsersController {
       .catch((err: Error) => res.status(500).json(err));
   }
 
-  public update(req: Request, res: Response) {
+  static update(req: Request, res: Response) {
     const id = req.params.id;
     const params: UserInterface = req.body;
 
@@ -56,7 +63,7 @@ export class UsersController {
       .catch((err: Error) => res.status(500).json(err));
   }
 
-  public delete(req: Request, res: Response) {
+  static delete(req: Request, res: Response) {
     const id = req.params.id;
     const options: DestroyOptions = {
       where: { id },
