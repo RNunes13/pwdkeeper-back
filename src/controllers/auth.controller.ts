@@ -128,6 +128,48 @@ export class AuthController {
     }
   }
 
+  static async usernameAvailability(req: Request, res: Response) {
+    const { username } = req.body;
+
+    if (!username) return res.status(400).send(CustomResponse({
+      success: false,
+      error: {
+        code: 'auth/bad-body',
+        message: 'Enter the username'
+      }
+    }));
+
+    try {
+      const user = await User.findOne({
+        where: { username: username.toLocaleLowerCase() }
+      });
+
+      return res.status(200).send(!user);
+    } catch(error) {
+      return res.status(400).send(CustomResponse({ success: false, error }));
+    }
+  }
+
+  static async emailAvailability(req: Request, res: Response) {
+    const { email } = req.body;
+
+    if (!email) return res.status(400).send(CustomResponse({
+      success: false,
+      error: {
+        code: 'auth/bad-body',
+        message: 'Enter the email'
+      }
+    }));
+
+    try {
+      const user = await User.findOne({ where: { email } });
+
+      return res.status(200).send(!user);
+    } catch(error) {
+      return res.status(400).send(CustomResponse({ success: false, error }));
+    }
+  }
+
   static getUserByToken(token: string) {
     const decoded = <any>jwt.verify(token, process.env.JWT_SECRET as string);
     

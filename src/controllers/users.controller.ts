@@ -1,9 +1,11 @@
 
+import jwt from 'jsonwebtoken';
 import { AuthController } from './index';
 import { Request, Response } from "express";
 import { UpdateOptions, DestroyOptions } from 'sequelize';
 import { User, UserInterface } from "../models/user.model";
 
+const MAX_AGE_COOKIE = 604800000; // In milliseconds -> 7d
 export class UsersController {
   public index(req: Request, res: Response) {
     User
@@ -28,7 +30,13 @@ export class UsersController {
       .then((user: User) => {
         (user.password as any) = undefined;
 
-        res.status(201).json(user)
+        const JWT_SECRET = process.env.JWT_SECRET as string;
+        const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: MAX_AGE_COOKIE / 1000 });
+
+        res.status(201).json({
+          token,
+          ...user.toJSON(),
+        });
       })
       .catch((err: Error) => res.status(500).json(err));
   }
