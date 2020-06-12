@@ -45,7 +45,7 @@ export class AuthController {
   static login(req: Request, res: Response) {
     const { username, password } = req.body;
 
-    if (!username || !password) return res.status(400).send(CustomResponse({
+    if (!username || !password) return res.status(200).send(CustomResponse({
       success: false,
       error: {
         code: 'auth/bad-body',
@@ -58,7 +58,7 @@ export class AuthController {
     })
     .then(user => {
       if(!user) {
-        return res.status(404).send(CustomResponse({
+        return res.status(200).send(CustomResponse({
           success: false,
           error: {
             code: 'user/not-found',
@@ -68,7 +68,7 @@ export class AuthController {
       }
 
       if (!AuthController.comparePassword(user.password, password)) {
-        return res.status(403).send(CustomResponse({
+        return res.status(200).send(CustomResponse({
           success: false,
           error: {
             code: 'auth/incorrect-credentials',
