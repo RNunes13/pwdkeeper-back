@@ -23,8 +23,7 @@ export class AuthController {
     }
 
     try {
-      const decoded = <any>jwt.verify(token, process.env.JWT_SECRET as string);
-      const user = await User.findOne({where: { id: decoded.userId }});
+      const user = await AuthController.getUserByToken(token);
 
       if (!user) {
         return res.status(400).send(CustomResponse({
@@ -36,7 +35,7 @@ export class AuthController {
         }));
       }
 
-      (req as any).user = { id: decoded.userId };
+      (req as any).user = { id: user.id };
       next();
     } catch(error) {
       return res.status(400).send(CustomResponse({ success: false, error }));
@@ -80,13 +79,59 @@ export class AuthController {
 
       const token = AuthController.generateToken(user.id);
 
+      (user.password as any) = undefined;
+
       return res.status(200).send(CustomResponse({
         success: true,
         message: 'Authenticated user',
-        data: token,
+        data: {
+          token,
+          ...user.toJSON(),
+        },
       }));
     })
     .catch(error => res.status(400).send(CustomResponse({ success: false, error })));
+  }
+
+  static async findUserByToken(req: Request, res: Response) {
+    const token = req.headers[HEADER_TOKEN] as string;
+
+    if (!token) {
+      return res.status(400).send(CustomResponse({
+        success: false,
+        error: {
+          code: 'auth/token-not-provided',
+          message: 'Token is not provided'
+        }
+      }));
+    }
+
+    try {
+      const user = await AuthController.getUserByToken(token);
+
+      if (!user) {
+        return res.status(401).send(CustomResponse({
+          success: false,
+          error: {
+            code: 'user/token-invalid',
+            message: 'The token you provided is invalid'
+          }
+        }));
+      }
+
+      return res.status(200).send(CustomResponse({
+        success: true,
+        data: user,
+      }));
+    } catch(error) {
+      return res.status(400).send(CustomResponse({ success: false, error }));
+    }
+  }
+
+  static getUserByToken(token: string) {
+    const decoded = <any>jwt.verify(token, process.env.JWT_SECRET as string);
+    
+    return User.scope('withoutPassword').findOne({where: { id: decoded.userId }});
   }
 
   static hashPassword(password: string) {

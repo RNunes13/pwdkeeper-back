@@ -14,7 +14,8 @@ export class Routes {
     }));
 
     // Auth
-    app.route(`${this.BASE}/sign-in`).post(AuthController.login)
+    app.route(`${this.BASE}/sign-in`).post(AuthController.login);
+    app.route(`${this.BASE}/auth-token`).get(AuthController.findUserByToken);
 
     // Users
     app.route(`${this.BASE}/users`)
