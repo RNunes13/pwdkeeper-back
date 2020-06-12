@@ -64,6 +64,16 @@ User.init(
     }
   },
   {
+    scopes: {
+      withoutPassword: {
+        attributes: { exclude: ['password'] }
+      },
+      active: {
+        where: {
+          disabled: false
+        }
+      },
+    },
     tableName: "users",
     sequelize: Database.sequelize
   }
