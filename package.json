@@ -38,9 +38,9 @@
     "@types/jsonwebtoken": "^8.5.0",
     "@types/node": "^14.0.13",
     "@types/sequelize": "^4.28.9",
-    "ts-loader": "^7.0.5",
-    "webpack": "^4.43.0",
-    "webpack-cli": "^3.3.11",
+    "ts-loader": "^9.4.2",
+    "webpack": "^5.75.0",
+    "webpack-cli": "^5.0.1",
     "webpack-node-externals": "^1.7.2"
   },
   "engines": {
